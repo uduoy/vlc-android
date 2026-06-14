@@ -1,0 +1,13 @@
+--- a/modules/text_renderer/freetype/platform_fonts.h
++++ b/modules/text_renderer/freetype/platform_fonts.h
+@@ -68,10 +68,10 @@ extern "C" {
+ #elif defined( __ANDROID__ )
+ # define SYSTEM_FONT_PATH                   "/system/fonts"
+-# define SYSTEM_DEFAULT_FONT_FILE           "Roboto-Regular.ttf"
++# define SYSTEM_DEFAULT_FONT_FILE           "NotoSansCJK-Regular.ttc"
+ # define SYSTEM_DEFAULT_FAMILY              "sans-serif"
+-# define SYSTEM_DEFAULT_MONOSPACE_FONT_FILE "DroidSansMono.ttf"
++# define SYSTEM_DEFAULT_MONOSPACE_FONT_FILE "NotoSansCJK-Regular.ttc"
+ # define SYSTEM_DEFAULT_MONOSPACE_FAMILY    "Monospace"
+ # define HAVE_GET_FONT_BY_FAMILY_NAME
+ #else

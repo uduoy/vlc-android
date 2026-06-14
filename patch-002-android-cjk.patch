@@ -1,0 +1,39 @@
+--- a/modules/text_renderer/freetype/fonts/android.c
++++ b/modules/text_renderer/freetype/fonts/android.c
+@@ -352,6 +352,38 @@ int Android_Prepare( vlc_font_select_t *fs )
+             return VLC_ENOMEM;
+     }
+ 
++    {
++        static const char *const cjk_font_candidates[] = {
++            "NotoSansCJK-Regular.ttc",
++            "NotoSansSC-Regular.otf",
++            "NotoSansTC-Regular.otf",
++            "MiSans-Regular.ttf",
++            "HarmonyOS_Sans_SC_Regular.ttf",
++            "OPPOSans-Regular.ttf",
++            NULL
++        };
++
++        for( int i = 0; cjk_font_candidates[i] != NULL; i++ )
++        {
++            char *psz_fontfile;
++            if( asprintf( &psz_fontfile, "%s/%s",
++                          SYSTEM_FONT_PATH, cjk_font_candidates[i] ) < 0 )
++                continue;
++
++            vlc_family_t *p_family =
++                NewFamily( fs, cjk_font_candidates[i],
++                           NULL, &fs->fallback_map, FB_LIST_DEFAULT );
++            if( p_family )
++            {
++                if( !NewFont( psz_fontfile, 0, 0, p_family ) )
++                    free( psz_fontfile );
++            }
++            else
++                free( psz_fontfile );
++        }
++    }
++
+     return VLC_SUCCESS;
+ }
