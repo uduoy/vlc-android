@@ -18,6 +18,7 @@ jobs:
       - name: Build in VLC Docker container
         run: |
           docker run --rm \
+            --user root \
             -v $GITHUB_WORKSPACE:/workspace \
             -w /workspace \
             registry.videolan.org/vlc-debian-android:20260610055743 \
