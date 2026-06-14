@@ -14,9 +14,13 @@ jobs:
       - name: Init VLC build environment
         run: |
           docker run --rm --user root \
-            -e GIT_CONFIG_COUNT=1 \
+            -e GIT_CONFIG_COUNT=3 \
             -e GIT_CONFIG_KEY_0=safe.directory \
             -e GIT_CONFIG_VALUE_0='*' \
+            -e GIT_CONFIG_KEY_1=user.email \
+            -e GIT_CONFIG_VALUE_1=ci@vlc-android.local \
+            -e GIT_CONFIG_KEY_2=user.name \
+            -e GIT_CONFIG_VALUE_2='VLC CI' \
             -v $GITHUB_WORKSPACE:/workspace \
             -w /workspace \
             $DOCKER_IMG \
@@ -39,9 +43,13 @@ jobs:
       - name: Build debug APK
         run: |
           docker run --rm --user root \
-            -e GIT_CONFIG_COUNT=1 \
+            -e GIT_CONFIG_COUNT=3 \
             -e GIT_CONFIG_KEY_0=safe.directory \
             -e GIT_CONFIG_VALUE_0='*' \
+            -e GIT_CONFIG_KEY_1=user.email \
+            -e GIT_CONFIG_VALUE_1=ci@vlc-android.local \
+            -e GIT_CONFIG_KEY_2=user.name \
+            -e GIT_CONFIG_VALUE_2='VLC CI' \
             -v $GITHUB_WORKSPACE:/workspace \
             -w /workspace \
             $DOCKER_IMG \
