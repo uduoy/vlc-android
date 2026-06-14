@@ -24,6 +24,9 @@ jobs:
             registry.videolan.org/vlc-debian-android:20260610055743 \
             bash -c "
               set -e
+              git config --global --add safe.directory /workspace
+              git config --global user.email 'ci@vlc-android.local'
+              git config --global user.name 'VLC CI'
               ./buildsystem/compile.sh --init -vlc4
               cd libvlcjni/vlc && patch -p1 < ../../CJK-font.patch && cd ../..
               echo 'CJK font patch applied successfully'
