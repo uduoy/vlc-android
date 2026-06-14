@@ -12,23 +12,22 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: registry.videolan.org/vlc-debian-android:20260610055743
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Fetch VLC source & dependencies
-        run: ./buildsystem/compile.sh --init -vlc4
-
-      - name: Apply CJK font patch
+      - name: Build in VLC Docker container
         run: |
-          cd libvlcjni/vlc
-          patch -p1 < ../../CJK-font.patch
-          echo "CJK font patch applied successfully"
-
-      - name: Build debug APK
-        run: ./gradlew assembleDebug -PforceVlc4=true
+          docker run --rm \
+            -v $GITHUB_WORKSPACE:/workspace \
+            -w /workspace \
+            registry.videolan.org/vlc-debian-android:20260610055743 \
+            bash -c "
+              set -e
+              ./buildsystem/compile.sh --init -vlc4
+              cd libvlcjni/vlc && patch -p1 < ../../CJK-font.patch && cd ../..
+              echo 'CJK font patch applied successfully'
+              ./gradlew assembleDebug -PforceVlc4=true
+            "
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
