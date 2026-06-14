@@ -6,54 +6,92 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: registry.videolan.org/vlc-debian-android:20260610055743
     env:
-      DOCKER_IMG: registry.videolan.org/vlc-debian-android:20260610055743
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - uses: actions/checkout@v4
 
       - name: Init VLC build environment
         run: |
-          docker run --rm --user root \
-            -e GIT_CONFIG_COUNT=3 \
-            -e GIT_CONFIG_KEY_0=safe.directory \
-            -e GIT_CONFIG_VALUE_0='*' \
-            -e GIT_CONFIG_KEY_1=user.email \
-            -e GIT_CONFIG_VALUE_1=ci@vlc-android.local \
-            -e GIT_CONFIG_KEY_2=user.name \
-            -e GIT_CONFIG_VALUE_2='VLC CI' \
-            -v $GITHUB_WORKSPACE:/workspace \
-            -w /workspace \
-            $DOCKER_IMG \
-            bash -c "set -e; ./buildsystem/compile.sh --init -vlc4"
+          set -e
+          git config --global --add safe.directory '*'
+          git config --global user.email ci@vlc-android.local
+          git config --global user.name 'VLC CI'
+          ./buildsystem/compile.sh --init -vlc4
 
       - name: Apply CJK font patches
+        shell: python3 {0}
         run: |
-          docker run --rm --user root \
-            -v $GITHUB_WORKSPACE:/workspace \
-            -w /workspace \
-            $DOCKER_IMG \
-            bash -c "
-              set -e
-              cd libvlcjni/vlc
-              patch -p1 < /workspace/patch-001-platform-fonts.patch
-              patch -p1 < /workspace/patch-002-android-cjk.patch
-              echo 'CJK font patches applied successfully'
-            "
+          import os
+
+          vlc_root = 'libvlcjni/vlc'
+
+          # --- Patch 1: platform_fonts.h ---
+          path = f'{vlc_root}/modules/text_renderer/freetype/platform_fonts.h'
+          with open(path) as f:
+              content = f.read()
+          content = content.replace(
+              '# define SYSTEM_DEFAULT_FONT_FILE           "Roboto-Regular.ttf"',
+              '# define SYSTEM_DEFAULT_FONT_FILE           "NotoSansCJK-Regular.ttc"')
+          content = content.replace(
+              '# define SYSTEM_DEFAULT_MONOSPACE_FONT_FILE "DroidSansMono.ttf"',
+              '# define SYSTEM_DEFAULT_MONOSPACE_FONT_FILE "NotoSansCJK-Regular.ttc"')
+          with open(path, 'w') as f:
+              f.write(content)
+          print('Patched platform_fonts.h')
+
+          # --- Patch 2: android.c ---
+          cjk_code = '''
+              {
+                  static const char *const cjk_font_candidates[] = {
+                      "NotoSansCJK-Regular.ttc",
+                      "NotoSansSC-Regular.otf",
+                      "NotoSansTC-Regular.otf",
+                      "MiSans-Regular.ttf",
+                      "HarmonyOS_Sans_SC_Regular.ttf",
+                      "OPPOSans-Regular.ttf",
+                      NULL
+                  };
+
+                  for( int i = 0; cjk_font_candidates[i] != NULL; i++ )
+                  {
+                      char *psz_fontfile;
+                      if( asprintf( &psz_fontfile, "%s/%s",
+                                    SYSTEM_FONT_PATH, cjk_font_candidates[i] ) < 0 )
+                          continue;
+
+                      vlc_family_t *p_family =
+                          NewFamily( fs, cjk_font_candidates[i],
+                                     NULL, &fs->fallback_map, FB_LIST_DEFAULT );
+                      if( p_family )
+                      {
+                          if( !NewFont( psz_fontfile, 0, 0, p_family ) )
+                              free( psz_fontfile );
+                      }
+                      else
+                          free( psz_fontfile );
+                  }
+              }'''
+
+          path = f'{vlc_root}/modules/text_renderer/freetype/fonts/android.c'
+          with open(path) as f:
+              lines = f.readlines()
+
+          # Find the 'return VLC_SUCCESS;' line in Android_Prepare function
+          for i, line in enumerate(lines):
+              if line.strip() == 'return VLC_SUCCESS;':
+                  lines.insert(i, cjk_code)
+                  break
+
+          with open(path, 'w') as f:
+              f.writelines(lines)
+          print('Patched fonts/android.c')
+          print('CJK font patches applied successfully')
 
       - name: Build debug APK
-        run: |
-          docker run --rm --user root \
-            -e GIT_CONFIG_COUNT=3 \
-            -e GIT_CONFIG_KEY_0=safe.directory \
-            -e GIT_CONFIG_VALUE_0='*' \
-            -e GIT_CONFIG_KEY_1=user.email \
-            -e GIT_CONFIG_VALUE_1=ci@vlc-android.local \
-            -e GIT_CONFIG_KEY_2=user.name \
-            -e GIT_CONFIG_VALUE_2='VLC CI' \
-            -v $GITHUB_WORKSPACE:/workspace \
-            -w /workspace \
-            $DOCKER_IMG \
-            bash -c "set -e; ./gradlew assembleDebug -PforceVlc4=true"
+        run: ./gradlew assembleDebug -PforceVlc4=true
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
