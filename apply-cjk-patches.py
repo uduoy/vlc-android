@@ -46,7 +46,7 @@ def patch_android_c():
         '        {\n',
         '            char *psz_fontfile;\n',
         '            if( asprintf( &psz_fontfile, "%s/%s",\n',
-        '                          SYSTEM_FONT_PATH, cjk_font_candidates[i] ) < 0 )\n',
+        '                          ANDROID_FONT_PATH, cjk_font_candidates[i] ) < 0 )\n',
         '                continue;\n',
         '\n',
         '            vlc_family_t *p_family =\n',
@@ -63,10 +63,16 @@ def patch_android_c():
         '    }\n',
     ]
 
+    # insert CJK code at the LAST return VLC_SUCCESS (inside Android_Prepare)
+    last_idx = None
     for i, line in enumerate(lines):
         if line.rstrip() == '    return VLC_SUCCESS;':
-            lines[i:i] = cjk_code
-            break
+            last_idx = i
+
+    if last_idx is not None:
+        lines[last_idx:last_idx] = cjk_code
+    else:
+        print('[ERROR] could not find insertion point in fonts/android.c')
 
     with open(path, 'w') as f:
         f.writelines(lines)

@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Init VLC build environment
+      - name: Full build (init + patch + compile)
         run: |
           docker run --rm --user root \
             -e GIT_CONFIG_COUNT=3 \
@@ -19,23 +19,17 @@ jobs:
             -e GIT_CONFIG_KEY_1=user.email -e GIT_CONFIG_VALUE_1=ci@vlc.local \
             -e GIT_CONFIG_KEY_2=user.name -e GIT_CONFIG_VALUE_2='VLC CI' \
             -v $GITHUB_WORKSPACE:/ws -w /ws \
-            $IMG bash -c 'set -e; ./buildsystem/compile.sh --init'
+            $IMG bash -c '
+              set -e
+              echo "=== Step 1: Init build environment ==="
+              ./buildsystem/compile.sh --init
 
-      - name: Apply CJK font patches
-        run: |
-          docker run --rm --user root \
-            -v $GITHUB_WORKSPACE:/ws -w /ws \
-            $IMG python3 /ws/apply-cjk-patches.py
+              echo "=== Step 2: Apply CJK font patches ==="
+              python3 /ws/apply-cjk-patches.py
 
-      - name: Build stable APK (Dev type)
-        run: |
-          docker run --rm --user root \
-            -e GIT_CONFIG_COUNT=3 \
-            -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0='*' \
-            -e GIT_CONFIG_KEY_1=user.email -e GIT_CONFIG_VALUE_1=ci@vlc.local \
-            -e GIT_CONFIG_KEY_2=user.name -e GIT_CONFIG_VALUE_2='VLC CI' \
-            -v $GITHUB_WORKSPACE:/ws -w /ws \
-            $IMG bash -c 'set -e; ./gradlew assembleDev'
+              echo "=== Step 3: Build APK ==="
+              ./gradlew assembleDev
+            '
 
       - name: Upload Stable APK
         uses: actions/upload-artifact@v4
