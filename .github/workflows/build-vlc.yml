@@ -27,7 +27,7 @@ jobs:
             -v $GITHUB_WORKSPACE:/ws -w /ws \
             $IMG python3 /ws/apply-cjk-patches.py
 
-      - name: Build debug APK
+      - name: Build release APK (Dev type)
         run: |
           docker run --rm --user root \
             -e GIT_CONFIG_COUNT=3 \
@@ -35,10 +35,10 @@ jobs:
             -e GIT_CONFIG_KEY_1=user.email -e GIT_CONFIG_VALUE_1=ci@vlc.local \
             -e GIT_CONFIG_KEY_2=user.name -e GIT_CONFIG_VALUE_2='VLC CI' \
             -v $GITHUB_WORKSPACE:/ws -w /ws \
-            $IMG bash -c 'set -e; ./gradlew assembleDebug -PforceVlc4=true'
+            $IMG bash -c 'set -e; ./gradlew assembleDev -PforceVlc4=true'
 
-      - name: Upload Debug APK
+      - name: Upload Dev APK
         uses: actions/upload-artifact@v4
         with:
-          name: VLC-Android-Debug-APK
-          path: application/app/build/outputs/apk/debug/VLC-Android-*.apk
+          name: VLC-Android-Dev-APK
+          path: application/app/build/outputs/apk/dev/VLC-Android-*.apk
