@@ -3,7 +3,7 @@
 
 import sys, os, re
 
-VLC_SRC = 'libvlcjni/vlc'
+VLC_SRC = 'vlc'
 
 def patch_platform_fonts():
     path = os.path.join(VLC_SRC, 'modules/text_renderer/freetype/platform_fonts.h')
